@@ -4,6 +4,7 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import androidx.core.content.edit
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -37,9 +38,7 @@ class ApiKeyStore(context: Context) {
         val ciphertext = cipher.doFinal(trimmed.toByteArray(Charsets.UTF_8))
         // iv is 12 bytes for GCM; prepend it so one blob holds everything.
         val blob = cipher.iv + ciphertext
-        prefs.edit()
-            .putString(VALUE, Base64.encodeToString(blob, Base64.NO_WRAP))
-            .apply()
+        prefs.edit { putString(VALUE, Base64.encodeToString(blob, Base64.NO_WRAP)) }
     }
 
     fun load(): String? {
@@ -56,7 +55,7 @@ class ApiKeyStore(context: Context) {
     }
 
     fun clear() {
-        prefs.edit().remove(VALUE).apply()
+        prefs.edit { remove(VALUE) }
     }
 
     fun hasKey(): Boolean = prefs.contains(VALUE)

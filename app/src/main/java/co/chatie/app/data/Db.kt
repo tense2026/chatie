@@ -15,12 +15,15 @@ import android.database.sqlite.SQLiteOpenHelper
  */
 class Db(context: Context) : SQLiteOpenHelper(context, NAME, null, VERSION) {
 
-    override fun onConfigure(db: SQLiteDatabase) {
-        db.setForeignKeyConstraintsEnabled(true)
+    init {
+        // WAL must be asked for through the helper. Running
+        // "PRAGMA journal_mode = WAL" through execSQL throws, because that
+        // statement returns a row and execSQL rejects anything that does.
+        setWriteAheadLoggingEnabled(true)
     }
 
-    override fun onOpen(db: SQLiteDatabase) {
-        if (!db.isReadOnly) db.execSQL("PRAGMA journal_mode = WAL;")
+    override fun onConfigure(db: SQLiteDatabase) {
+        db.setForeignKeyConstraintsEnabled(true)
     }
 
     override fun onCreate(db: SQLiteDatabase) {

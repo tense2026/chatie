@@ -45,6 +45,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     testOptions {
@@ -72,7 +73,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)

@@ -18,6 +18,7 @@ import co.chatie.app.data.Message
 import co.chatie.app.data.MessageStatus
 import co.chatie.app.data.Role
 import co.chatie.app.ui.common.MarkdownText
+import java.util.Locale
 
 /**
  * One committed message.
@@ -88,4 +89,4 @@ private fun MessageFooter(message: Message) {
 }
 
 private fun formatCredits(value: Double): String =
-    if (value >= 10) value.toInt().toString() else String.format("%.2f", value)
+    if (value >= 10) value.toInt().toString() else String.format(Locale.US, "%.2f", value)

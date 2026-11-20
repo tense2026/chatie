@@ -9,12 +9,23 @@ import co.chatie.app.data.Db
 
 class ChatieApp : Application() {
 
-    lateinit var container: AppContainer
+    /** Null when start-up failed; [startupError] then holds the reason. */
+    var container: AppContainer? = null
+        private set
+
+    var startupError: String? = null
         private set
 
     override fun onCreate() {
         super.onCreate()
-        container = AppContainer(this)
+        // First, so a crash anywhere after this point is recoverable as text.
+        CrashLog.install(this)
+        try {
+            container = AppContainer(this)
+        } catch (e: Throwable) {
+            startupError = CrashLog.describe(Thread.currentThread(), e)
+            CrashLog.write(this, startupError!!)
+        }
     }
 }
 
