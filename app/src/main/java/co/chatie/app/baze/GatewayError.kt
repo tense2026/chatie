@@ -15,6 +15,22 @@ class GatewayError(
 
     val isRetryable: Boolean get() = status == 429 || status in 500..599
 
+    /**
+     * What the gateway actually said, for showing under [userMessage].
+     * A friendly message that hides the server's own wording makes a wrong
+     * diagnosis easy and a right one impossible.
+     */
+    val diagnostic: String
+        get() = buildString {
+            append(if (status == 0) "요청 실패" else "HTTP $status")
+            code?.let { if (it != status) append(" · code $it") }
+            reason?.let { append(" · reason=$it") }
+            if (rawMessage.isNotBlank() && rawMessage != userMessage) {
+                append(" · ")
+                append(rawMessage)
+            }
+        }
+
     companion object {
         fun of(status: Int, body: String, retryAfter: Int?, json: kotlinx.serialization.json.Json): GatewayError {
             // Cloudflare blocks before the gateway is reached and answers in plain text.

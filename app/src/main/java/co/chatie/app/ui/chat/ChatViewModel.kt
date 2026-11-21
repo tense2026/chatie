@@ -259,10 +259,13 @@ class ChatViewModel(
                 }
                 throw cancel
             } catch (e: Throwable) {
-                val message = (e as? GatewayError)?.userMessage
+                val gatewayError = e as? GatewayError
+                val message = gatewayError?.userMessage
                     ?: e.message?.takeIf { it.isNotBlank() }
                     ?: "알 수 없는 오류로 응답을 받지 못했습니다."
-                errorMessage = message
+                // Keep the gateway's own wording attached: the friendly line is
+                // a guess at the cause, this is what actually happened.
+                errorMessage = gatewayError?.let { "$message\n(${it.diagnostic})" } ?: message
                 withContext(Dispatchers.IO) {
                     if (buffer.isEmpty()) {
                         // Nothing arrived: drop the empty row rather than keep a blank turn.

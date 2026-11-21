@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -63,8 +64,9 @@ fun SettingsScreen(
     // SecureTextField keeps the key in a TextFieldState the platform can mask
     // and keep out of autofill/clipboard heuristics.
     val keyState = rememberTextFieldState()
-    var savedKeyHint by remember { mutableStateOf(keyStore.load()?.let(ApiKeyStore::hint)) }
+    var savedKeyHint by remember { mutableStateOf(keyStore.load()?.let(ApiKeyStore::describe)) }
     var connectionStatus by remember { mutableStateOf<String?>(null) }
+    var connectionDetail by remember { mutableStateOf<String?>(null) }
     var checking by remember { mutableStateOf(false) }
 
     var baseInstructions by remember {
@@ -117,6 +119,11 @@ fun SettingsScreen(
                     text = "저장된 키: $it",
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                Text(
+                    text = "길이와 끝 4자가 발급받은 키와 다르면 붙여넣기가 잘린 것입니다.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             OutlinedSecureTextField(
                 state = keyState,
@@ -128,9 +135,10 @@ fun SettingsScreen(
                 Button(
                     onClick = {
                         keyStore.save(keyState.text.toString())
-                        savedKeyHint = keyStore.load()?.let(ApiKeyStore::hint)
+                        savedKeyHint = keyStore.load()?.let(ApiKeyStore::describe)
                         keyState.clearText()
                         connectionStatus = null
+                        connectionDetail = null
                     },
                     enabled = keyState.text.isNotBlank(),
                 ) { Text("저장") }
@@ -139,15 +147,18 @@ fun SettingsScreen(
                     onClick = {
                         checking = true
                         connectionStatus = null
+                        connectionDetail = null
                         scope.launch {
-                            connectionStatus = try {
+                            try {
                                 val balance = gateway.credits()
                                 val remaining = balance.total?.remaining
-                                "연결 성공 · 남은 크레딧 ${remaining?.toInt() ?: "?"}"
+                                connectionStatus = "연결 성공 · 남은 크레딧 ${remaining?.toInt() ?: "?"}"
                             } catch (e: GatewayError) {
-                                "실패: ${e.userMessage}"
+                                connectionStatus = "실패: ${e.userMessage}"
+                                connectionDetail = e.diagnostic
                             } catch (e: Throwable) {
-                                "실패: ${e.message ?: "네트워크 오류"}"
+                                connectionStatus = "실패: ${e.message ?: "네트워크 오류"}"
+                                connectionDetail = e::class.java.simpleName
                             }
                             checking = false
                         }
@@ -161,6 +172,7 @@ fun SettingsScreen(
                             keyStore.clear()
                             savedKeyHint = null
                             connectionStatus = null
+                            connectionDetail = null
                         },
                     ) { Text("삭제") }
                 }
@@ -175,6 +187,17 @@ fun SettingsScreen(
                         MaterialTheme.colorScheme.primary
                     },
                 )
+            }
+            // The gateway's own wording, verbatim. Without it a wrong guess at
+            // the cause is easy and the right one is unreachable.
+            connectionDetail?.let {
+                SelectionContainer {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             HorizontalDivider()

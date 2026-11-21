@@ -89,5 +89,11 @@ class ApiKeyStore(context: Context) {
 
         /** Last four characters, for showing which key is in use. */
         fun hint(key: String): String = if (key.length <= 4) "••••" else "••••${key.takeLast(4)}"
+
+        /**
+         * Last four characters and the length. The length is what makes a
+         * truncated paste visible without revealing the key.
+         */
+        fun describe(key: String): String = "${hint(key)} · ${key.length}자"
     }
 }
